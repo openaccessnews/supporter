@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPENACCESS TV | Global Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { background: #080808; color: #eee; font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; }
+        .v-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #222; }
+        video { width: 100%; height: 100%; }
+        .btn { transition: all 0.2s; border: 1px solid #1a1a1a; background: #0f0f0f; }
+        .btn:hover { background: #1a1a1a; border-color: #3b82f6; }
+        .btn-active { background: #1d4ed8 !important; border-color: #3b82f6 !important; color: white !important; box-shadow: 0 4px 15px rgba(29, 78, 216, 0.3); }
+        .live-dot { height: 6px; width: 6px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body class="p-4 md:p-10 flex flex-col items-center min-h-screen justify-center">
+    <div class="max-w-5xl w-full">
+        <div class="flex justify-between items-end mb-6 border-b border-white/5 pb-4">
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter uppercase">Open Access <span class="text-blue-500">News</span></h1>
+                <p class="text-[9px] text-gray-500 font-bold tracking-[0.4em] uppercase">Supporter Access Terminal</p>
+            </div>
+            <div id="status" class="text-[10px] text-blue-500 font-mono font-bold uppercase tracking-widest italic">
+                <span class="live-dot"></span>Connecting...
+            </div>
+        </div>
+
+        <div class="v-container shadow-2xl mb-8">
+            <video id="video" controls autoplay muted playsinline></video>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <button onclick="load(atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL3Bob2VuaXgtdXMubTN1OA=='), this)" class="btn p-5 rounded-xl text-left">
+        <span class="block text-[10px] text-blue-400 font-bold mb-1 uppercase tracking-widest">Channel 01</span>
+        <span class="font-bold text-lg">OpenAccess USA</span>
+    </button>
+    
+    <button onclick="load(atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL2FzaWEubTN1OA=='), this)" class="btn p-5 rounded-xl text-left">
+        <span class="block text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-widest">Channel 02</span>
+        <span class="font-bold text-lg">OpenAccess Asia</span>
+    </button>
+    
+    <button onclick="load(atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL2V1Lm0zdTg='), this)" class="btn p-5 rounded-xl text-left">
+        <span class="block text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-widest">Channel 03</span>
+        <span class="font-bold text-lg">OpenAccess Europe</span>
+    </button>
+</div>
+
+    <script>
+        const video = document.getElementById('video');
+        const status = document.getElementById('status');
+        const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+
+        // Obfuscated Channel Database
+        const channels = {
+            '1': atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL3Bob2VuaXgtdXMubTN1OA=='),
+            '2': atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL2FzaWEubTN1OA=='),
+            '3': atob('aHR0cHM6Ly93d3cuYmxvb21iZXJnLmNvbS9tZWRpYS1tYW5pZmVzdC9zdHJlYW1zL2V1Lm0zdTg=')
+        };
+
+        function load(url, el) {
+            status.innerHTML = '<span class="live-dot" style="background:#3b82f6"></span>Connecting...';
+            
+            // UI Toggle
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('btn-active'));
+            if(el) el.classList.add('btn-active');
+            
+            if (Hls.isSupported()) {
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                    status.innerHTML = '<span class="live-dot"></span>Live Feed';
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                status.innerHTML = '<span class="live-dot"></span>Live Feed';
+            }
+        }
+
+        // READ LINK PARAMETERS
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelId = urlParams.get('channel');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const allBtns = document.querySelectorAll('.btn');
+            if (channelId && channels[channelId]) {
+                load(channels[channelId], allBtns[parseInt(channelId) - 1]);
+            } else {
+                load(channels['1'], allBtns[0]);
+            }
+        });
+
+        // Recovery
+        hls.on(Hls.Events.ERROR, (event, data) => { if (data.fatal) hls.startLoad(); });
+    </script>
+</body>
+</html>
